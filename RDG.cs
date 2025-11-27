@@ -11,7 +11,7 @@ public class RDG
     static void Main(string[] args)
     {
         // ===========================================
-        // 1. DIMENSIONEN EINLESEN UND VALIDIEREN
+        //  DIMENSIONEN EINLESEN UND VALIDIEREN
         // ===========================================
 
         // --- HÖHE abfragen (min 10 & max 25) ---
@@ -65,7 +65,7 @@ public class RDG
         }
 
         // ===========================================
-        // 2. INITIALISIERUNG
+        //  INITIALISIERUNG
         // ===========================================
 
         // Zentrales Objekt zur Generierung von Zufallszahlen
@@ -75,7 +75,7 @@ public class RDG
         char[,] karte = InitialisiereKarte(breite, hoehe);
 
         // ===========================================
-        // 3. ZUFÄLLIGE GANG-PLATZIERUNG (30% Zufallslöcher)
+        //  ZUFÄLLIGE GANG-PLATZIERUNG (30% Zufallslöcher)
         // ===========================================
 
         int total = hoehe * breite;
