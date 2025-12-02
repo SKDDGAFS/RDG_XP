@@ -189,5 +189,6 @@ public class RDG
             Console.WriteLine();
         }
         Console.ResetColor();
+        console.ReadKey();
     }
 }
