@@ -17,6 +17,8 @@ public class RDG
     static int _spielerY;
     static bool _spielLaeuft = true; // Game loop Steurung
 
+    einfuehrungundRegeln();
+
     // ==========================================================
     // MAIN: Jetzt mit Setup und Game Loop
     // ==========================================================
@@ -300,5 +302,24 @@ public class RDG
         if (v > max)
             return max;
         return v;
+    }
+
+    static void einfuehrungundRegeln()
+    {
+        console.fOREGROUNDCOLOR = ConsoleColor.yellow;
+        Console.WriteLine("Willkommen zum Random Dungeon Generator (RDG) by XP!");
+        Console.WriteLine("In diesem Spiel steuerst du einen Spieler (@), der durch einen zufällig generierten Dungeon navigieren muss.");
+        Console.WriteLine("Ziel ist es, den Ausgang (E) zu erreichen, der sich irgendwo im Dungeon befindet.");
+        Console.WriteLine("Du kannst dich mit den Pfeiltasten bewegen:");
+        Console.WriteLine(" - Oben: ↑");
+        Console.WriteLine(" - Unten: ↓");
+        Console.WriteLine(" - Links: ←");
+        Console.WriteLine(" - Rechts: →");
+        Console.WriteLine("Wände (#) können nicht durchquert werden, nur Gänge (.) sind begehbar.");
+        Console.WriteLine("Viel Glück und viel Spaß beim Erkunden des Dungeons!");
+        Console.WriteLine("Drücke eine beliebige Taste, um fortzufahren...");
+        console.ResetColor();
+        Console.ReadKey();
+        Console.Clear();
     }
 }
