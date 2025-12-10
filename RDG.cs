@@ -1,14 +1,18 @@
-using System;
-using System.Threading; // Neu: Benötigt für Thread.Sleep
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 public class RDG
 {
-    // Symbole für die Dungeon-Karte
-    const char WAND = '#';
-    const char GANG = '.';
-    const char START = 'S';
-    const char ENDE = 'E';
-    const char SPIELER = '@';
+    const char WAND = '#';   // Wand-Symbol
+    const char GANG = '.';   // Gang-Symbol
+    const char START = 'S';  // Start
+    const char ENDE = 'E';   // Ende
+    const char Schatz = 'T';   // Ende
+    const char Fallen = 'F';   // Ende
+    static Random zufaelig = new Random();
 
     static Random _rnd = new Random();
 
@@ -24,6 +28,20 @@ public class RDG
     // ==========================================================
     static void Main(string[] args)
     {
+        // TODO: Was noch gemacht werden muss
+        // Räume generieren
+        // Speichern als Datei
+        // Spieler einbauen
+        // Regeln implementieren
+
+        // Optional Sachen die wir noch machen können
+        // Menü erstellen
+        // Auf alten Karten zugreifen (müssen Herrn Gül fragen, ob wir List benutzen dürfen)
+        // Wenn das Dungeon geschafft wurde, Abfrage, ob man noch eines spielen will oder das Programm verlassen will
+        // Weitere Ideen hier eintragen
+
+        Console.WriteLine("Wie groß soll die Höhe des Dungeons sein (min 10 & max 25)?");
+        int hoehe;
         // 1. EINMALIGER SETUP: Dungeon generieren und Spieler platzieren
         Console.WriteLine("Wie groß soll die Höhe des Dungeons sein (min 10 & max 25)?");
         int hoehe = HoleGueltigeEingabe(10, 25);
@@ -135,6 +153,11 @@ public class RDG
         {
             try
             {
+                hoehe = Convert.ToInt32(Console.ReadLine());
+                if (hoehe < 10 || hoehe > 25)
+                {
+                    Console.WriteLine("Die Höhe darf nicht kleiner als 10 oder größer als 25 sein. \nVersuchen Sie es erneut:");
+                }
                 int wert = Convert.ToInt32(Console.ReadLine());
                 if (wert < min || wert > max)
                     Console.WriteLine($"Der Wert muss zwischen {min} und {max} liegen. Versuchen Sie es erneut:");
@@ -249,6 +272,31 @@ public class RDG
 
             for (int s = 0; s < laenge; s++)
             {
+                char symbol = karte[y, x]; // aktuelles Zeichen holen
+
+                if (symbol == 'S')
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;   // Start grün
+                }
+                else if (symbol == 'E')
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;     // Ende rot
+                }
+                else if (symbol == 'T')
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                }
+                else if (symbol == 'F')
+                {
+                    Console.ForegroundColor = ConsoleColor.Magenta;
+                }
+                else
+                {
+                    Console.ResetColor();
+                }
+
+                Console.Write(symbol);
+                Console.ResetColor(); // Farbe zurücksetzen
                 if (karte[cy, cx] == WAND)
                 {
                     karte[cy, cx] = GANG;
@@ -262,6 +310,8 @@ public class RDG
             }
             erstelleWege++;
         }
+        Console.ReadKey();
+
     }
 
     // WICHTIG: Diese Methode wurde angepasst, um den Spieler zu zeichnen!
@@ -303,24 +353,156 @@ public class RDG
             return max;
         return v;
     }
-
-    static void einfuehrungundRegeln()
+    static void Start_EndeErstellen(char[,] karte, int breite, int hoehe, out int startX, out int startY, out int endX, out int endY)
     {
-        console.fOREGROUNDCOLOR = ConsoleColor.yellow;
-        Console.WriteLine("Willkommen zum Random Dungeon Generator (RDG) by XP!");
-        Console.WriteLine("In diesem Spiel steuerst du einen Spieler (@), der durch einen zufällig generierten Dungeon navigieren muss.");
-        Console.WriteLine("Ziel ist es, den Ausgang (E) zu erreichen, der sich irgendwo im Dungeon befindet.");
-        Console.WriteLine("Du kannst dich mit den Pfeiltasten bewegen:");
-        Console.WriteLine(" - Oben: ↑");
-        Console.WriteLine(" - Unten: ↓");
-        Console.WriteLine(" - Links: ←");
-        Console.WriteLine(" - Rechts: →");
-        Console.WriteLine("Wände (#) können nicht durchquert werden, nur Gänge (.) sind begehbar.");
-        Console.WriteLine("Viel Glück und viel Spaß beim Erkunden des Dungeons!");
-        Console.WriteLine("Drücke eine beliebige Taste, um fortzufahren...");
-        console.ResetColor();
-        Console.ReadKey();
-        Console.Clear();
-		Console.ReadKey();
+        int minAbstandY = zufaelig.Next(1, Math.Max(2, hoehe / 5));
+        int minAbstandX = zufaelig.Next(1, Math.Max(2, breite / 5));
+
+        startY = zufaelig.Next(1, hoehe - 1);
+        startX = zufaelig.Next(1, breite - 1);
+        karte[startY, startX] = START;
+
+        do
+        {
+            endY = zufaelig.Next(1, hoehe - 1);
+            endX = zufaelig.Next(1, breite - 1);
+        } while (Math.Abs(endY - startY) < minAbstandY || Math.Abs(endX - startX) < minAbstandX);
+        karte[endY, endX] = ENDE;
+
+    }
+    static void ErzeugeNebenWegeKlein(char[,] karte, int anzahlNebenwege, int startX, int startY, int endX, int endY, int hoehe, int breite)
+    {
+        for (int i = 0; i < anzahlNebenwege; i++)
+        {
+            int festX = startX;
+            int festY = startY;
+
+            int laenge = zufaelig.Next(3, 15);
+
+            int richtung = zufaelig.Next(0, 4);
+
+            for (int l = 0; l < laenge; l++)
+            {
+                if (richtung == 0) festY--;
+                if (richtung == 1) festY++;
+                if (richtung == 2) festX--;
+                if (richtung == 3) festX++;
+
+                if (festX <= 0 || festX >= breite - 1 || festY <= 0 || festY >= hoehe - 1)
+                {
+                    break;
+                }
+                if (karte[festY, festX] != WAND)
+                {
+                    continue;
+                }
+
+                karte[festY, festX] = GANG;
+            }
+
+        }
+    }
+    static void ErzeugeNebenWegeGroß(char[,] karte, int anzahlNebenwege, int startX, int startY, int endX, int endY, int hoehe, int breite)
+    {
+        for (int i = 0; i < anzahlNebenwege; i++)
+        {
+            int festX, festY;
+
+
+            do
+            {
+                festX = zufaelig.Next(1, breite - 1);
+                festY = zufaelig.Next(1, hoehe - 1);
+            } while (karte[festY, festX] != GANG);
+
+            int laenge = zufaelig.Next(30, 70);
+
+            for (int l = 0; l < laenge; l++)
+            {
+                int richtung = zufaelig.Next(0, 4);
+                if (richtung == 0 && festY > 1)
+                {
+                    festY--;
+                }
+                else if (richtung == 1 && festY < hoehe - 2)
+                {
+                    festY++;
+                }
+                else if (richtung == 2 && festX > 1)
+                {
+                    festX--;
+                }
+                else if (richtung == 3 && festX < breite - 2)
+                {
+                    festX++;
+                }
+                if (festX <= 0 || festX >= breite - 1 || festY <= 0 || festY >= hoehe - 1)
+                {
+                    break;
+                }
+                if (karte[festY, festX] == GANG || (festX == endX && festY == endY))
+                {
+                    continue;
+                }
+                int angrenzendeGange = 0;
+                if (karte[festY - 1, festX] == GANG)
+                {
+                    angrenzendeGange++;
+                }
+                if (karte[festY + 1, festX] == GANG)
+                {
+                    angrenzendeGange++;
+                }
+                if (karte[festY, festX - 1] == GANG)
+                {
+                    angrenzendeGange++;
+                }
+                if (karte[festY, festX + 1] == GANG)
+                {
+                    angrenzendeGange++;
+                }
+
+                if (angrenzendeGange > 1)
+                {
+                    continue;
+                }
+                karte[festY, festX] = GANG;
+
+                if (festX + 1 < breite - 1 && karte[festY, festX + 1] == WAND)
+                {
+                    karte[festY, festX + 1] = GANG;
+                }
+                if (festY + 1 < hoehe - 1 && karte[festY + 1, festX] == WAND)
+                {
+                    karte[festY + 1, festX] = GANG;
+                }
+            }
+        }
+    }
+    static void ErzeugeSchaetzeUndFallen(char[,] karte, int hoehe, int breite)
+    {
+        for (int y = 0; y < hoehe; y++)
+        {
+            for (int x = 0; x < breite; x++)
+            {
+                if (karte[y, x] == '.')
+                {
+                    int zahl = zufaelig.Next(1, 101);
+                    if (zahl <= 5)
+                    {
+                        int ToderF = zufaelig.Next(0, 2);
+                        if (ToderF == 0)
+                        {
+                            karte[y, x] = Schatz;
+                        }
+                        else
+                        {
+                            karte[y, x] = Fallen;
+                        }
+                        Console.ResetColor();
+                    }
+                }
+            }
+        }
     }
 }
