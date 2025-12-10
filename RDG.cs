@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading; // Neu: Benötigt für Thread.Sleep
 
 public class RDG
@@ -321,5 +321,6 @@ public class RDG
         console.ResetColor();
         Console.ReadKey();
         Console.Clear();
+		Console.ReadKey();
     }
 }
