@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO; // Für Dateizugriff damir wir die Karte speichern können als textdatei
 
 public class RDG
 {
@@ -112,6 +113,7 @@ public class RDG
         {
             ErzeugeRaum(karte, hoehe, breite);
         }
+        SpeichereKarteMitAbfrage(karte, hoehe, breite);
 
         Console.WriteLine("---ZUFALLSDUNGEON---");
         // Karte ausgeben
@@ -385,4 +387,59 @@ public class RDG
         }
         karte[eingangY, eingangX] = GANG;
     }
+
+
+    static void SpeichereKarteMitAbfrage(char[,] karte, int hoehe, int breite)
+    {
+        Console.WriteLine("Möchten Sie die Karte als Datei speichern? (ja/nein)");
+        while (true)
+        {
+            string eingabe = Console.ReadLine().ToLower();
+
+            if (eingabe == "ja")
+            {
+                Console.WriteLine("Bitte geben Sie den Dateinamen ein (z. B. dungeon.txt):");
+
+                while (true)
+                {
+                    string dateiname = Console.ReadLine();
+
+                    if (string.IsNullOrWhiteSpace(dateiname) || !dateiname.EndsWith(".txt"))
+                    {
+                        Console.WriteLine("Ungültiger Dateiname! Bitte auf .txt achten:");
+                        continue;
+                    }
+
+                    string pfad = Path.Combine(Directory.GetCurrentDirectory(), dateiname);
+
+                    using (StreamWriter writer = new StreamWriter(pfad))
+                    {
+                        for (int y = 0; y < hoehe; y++)
+                        {
+                            for (int x = 0; x < breite; x++)
+                            {
+                                writer.Write(karte[y, x]);
+                            }
+                            writer.WriteLine();
+                        }
+                    }
+
+                    Console.WriteLine($"Karte erfolgreich gespeichert unter: {pfad}");
+                    break;
+                }
+                break;
+            }
+            else if (eingabe == "nein")
+            {
+                Console.WriteLine("Karte wurde nicht gespeichert.");
+                break;
+            }
+            else
+            {
+                Console.WriteLine("Ungültige Eingabe! Bitte 'ja' oder 'nein' eingeben.");
+            }
+        }
+    }
+
+
 }
