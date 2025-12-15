@@ -28,48 +28,12 @@ public class RDG
         // Weitere Ideen hier eintragen
 
         Console.WriteLine("Wie groß soll die Höhe des Dungeons sein (min 10 & max 25)?");
-        int hoehe;
-        while (true)
-        {
-            try
-            {
-                hoehe = Convert.ToInt32(Console.ReadLine());
-                if (hoehe < 10 || hoehe > 25)
-                {
-                    Console.WriteLine("Die Höhe darf nicht kleiner als 10 oder größer als 25 sein. \nVersuchen Sie es erneut:");
-                }
-                else
-                {
-                    break;
-                }
-            }
-            catch
-            {
-                Console.WriteLine("Fehler! Bitte geben Sie eine Zahl ein:");
-            }
-        }
+        int hoehe = Eingabe(10, 25);
 
         Console.WriteLine("Wie groß soll die Breite des Dungeons sein (min 10 & max 50)?");
-        int breite;
-        while (true)
-        {
-            try
-            {
-                breite = Convert.ToInt32(Console.ReadLine());
-                if (breite < 10 || breite > 50)
-                {
-                    Console.WriteLine("Die Breite darf nicht kleiner als 10 oder größer als 50 sein. \nVersuchen Sie es erneut:");
-                }
-                else
-                {
-                    break;
-                }
-            }
-            catch
-            {
-                Console.WriteLine("Fehler! Bitte geben Sie eine Zahl ein:");
-            }
-        }
+        int breite = Eingabe(10, 50);
+
+        Console.WriteLine($"Dungeon erstellt mit Höhe {hoehe} und Breite {breite}.");
 
         char[,] karte = InitialisiereKarte(breite, hoehe);
         Start_EndeErstellen(karte, breite, hoehe, out int startX, out int startY, out int endX, out int endY);
@@ -150,6 +114,29 @@ public class RDG
         }
         Console.ReadKey();
 
+    }
+    static int Eingabe(int min, int max)
+    {
+        int wert;
+        while (true)
+        {
+            try
+            {
+                wert = Convert.ToInt32(Console.ReadLine());
+                if (wert >= min && wert <= max)
+                {
+                    return wert;
+                }
+                else
+                {
+                    Console.WriteLine($"Der Wert muss zwischen {min} und {max} liegen. Bitte erneut eingeben:");
+                }
+            }
+            catch
+            {
+                Console.WriteLine("Fehler! Bitte geben Sie eine Zahl ein:");
+            }
+        }
     }
 
     static char[,] InitialisiereKarte(int breite, int hoehe)
@@ -397,16 +384,21 @@ public class RDG
 
             if (eingabe == "ja")
             {
-                Console.WriteLine("Bitte geben Sie den Dateinamen ein (z. B. dungeon.txt):");
+                Console.WriteLine("Bitte geben Sie den Dateinamen ein (ohne Endung, z. B. dungeon):");
 
                 while (true)
                 {
                     string dateiname = Console.ReadLine();
 
-                    if (string.IsNullOrWhiteSpace(dateiname) || !dateiname.EndsWith(".txt"))
+                    if (string.IsNullOrWhiteSpace(dateiname))
                     {
-                        Console.WriteLine("Ungültiger Dateiname! Bitte auf .txt achten:");
+                        Console.WriteLine("Ungültiger Dateiname! Bitte erneut eingeben:");
                         continue;
+                    }
+
+                    if (!dateiname.EndsWith(".txt"))
+                    {
+                        dateiname += ".txt";
                     }
 
                     string pfad = Path.Combine(Directory.GetCurrentDirectory(), dateiname);
