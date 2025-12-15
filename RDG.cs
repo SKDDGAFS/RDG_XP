@@ -596,4 +596,57 @@ public class RDG
                 {
                     string dateiname = Console.ReadLine();
 
-                    if (string.
+                    if (string.IsNullOrWhiteSpace(dateiname))
+                    {
+                        Console.WriteLine("Ungültiger Dateiname! Bitte erneut eingeben:");
+                        continue;
+                    }
+
+                    if (!dateiname.EndsWith(".txt"))
+                    {
+                        dateiname += ".txt";
+                    }
+
+                    string pfad = Path.Combine(Directory.GetCurrentDirectory(), dateiname);
+
+                    using (StreamWriter writer = new StreamWriter(pfad))
+                    {
+                        for (int y = 0; y < hoehe; y++)
+                        {
+                            for (int x = 0; x < breite; x++)
+                            {
+                                writer.Write(karte[y, x]);
+                            }
+                            writer.WriteLine();
+                        }
+                    }
+
+                    Console.WriteLine($"Karte erfolgreich gespeichert unter: {pfad}");
+                    break;
+                }
+                break;
+            }
+            else if (eingabe == "nein")
+            {
+                Console.WriteLine("Karte wurde nicht gespeichert.");
+                break;
+            }
+            else
+            {
+                Console.WriteLine("Ungültige Eingabe! Bitte 'ja' oder 'nein' eingeben.");
+            }
+        }
+    }
+
+    static void Regeln_Einführung()
+    {
+        Console.WriteLine("Willkommen zum Random Dungeon Generator by XP !");
+        Console.WriteLine("In diesem Spiel geht es darum, einen Dungeon zu entkommen, Schätze zu finden und Fallen zu vermeiden.");
+        Console.WriteLine("Der Startpunkt ist mit 'S' markiert und das Ende mit 'E'.");
+        Console.WriteLine("Schätze sind mit 'T' und Fallen mit 'F' gekennzeichnet.");
+        Console.WriteLine("Viel Glück und viel Spaß beim Erkunden des Dungeons!");
+        Console.WriteLine("Bitte nur Enter drücken, um fortzufahren...");
+        Console.ReadKey(true);
+        Console.Clear();
+    }
+}
