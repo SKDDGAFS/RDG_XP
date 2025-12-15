@@ -15,14 +15,14 @@ public class RDG
     static char Fallen = 'F';   // Ende
     static Random zufaelig = new Random();
 
+    static void Regeln_Einführung();
+
     static void Main(string[] args)
     {
         // TODO: Was noch gemacht werden muss
         // Spieler einbauen
-        // Regeln implementieren
 
         // Optional Sachen die wir noch machen können
-        // Menü erstellen
         // Auf alten Karten zugreifen (müssen Herrn Gül fragen, ob wir List benutzen dürfen)
         // Wenn das Dungeon geschafft wurde, Abfrage, ob man noch eines spielen will oder das Programm verlassen will
         // Weitere Ideen hier eintragen
@@ -440,5 +440,12 @@ public class RDG
         }
     }
 
-
-}
+    static void Regeln_Einführung()
+    {
+        Console.WriteLine("Willkommen zum Random Dungeon Generator by XP !");
+        Console.WriteLine("In diesem Spiel geht es darum, einen Dungeon zu entkommen, Schätze zu finden und Fallen zu vermeiden.");
+        Console.WriteLine("Der Startpunkt ist mit 'S' markiert und das Ende mit 'E'.");
+        Console.WriteLine("Schätze sind mit 'T' und Fallen mit 'F' gekennzeichnet.");
+        Consoole.WriteLine("Spieler ist mit '@' gekenzeichnet")
+        Console.WriteLine("Viel Glück und viel Spaß beim Erkunden des Dungeons!");
+    }
