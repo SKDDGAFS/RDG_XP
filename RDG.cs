@@ -18,7 +18,6 @@ public class RDG
     static void Main(string[] args)
     {
         // TODO: Was noch gemacht werden muss
-        // Speichern als Datei
         // Spieler einbauen
         // Regeln implementieren
 
