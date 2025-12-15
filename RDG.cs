@@ -43,7 +43,7 @@ public class RDG
         int maxNebenwege = 14 + (breite - 10) * 20 / 40;
         int anzahlNebenwege = zufaelig.Next(minNebenwege, maxNebenwege + 1);
 
-        if (hoehe <= 15 && breite <= 25)
+        if (hoehe <= 15 && breite <= 25) 
         {
             ErzeugeNebenWegeKlein(karte, anzahlNebenwege, startX, startY, endX, endY, hoehe, breite);
         }
