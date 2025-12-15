@@ -3,28 +3,257 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO; // Für Dateizugriff damir wir die Karte speichern können als textdatei
+using System.IO; // Für Dateizugriff
+
+// ******************************************************
+// I. SPIELERKLASSE
+// ******************************************************
+
+public class Player
+{
+    public int X { get; private set; }
+    public int Y { get; private set; }
+    // Der Spieler braucht ein Inventar, um Schätze zu zählen
+    public int TreasuresCollected { get; private set; } = 0;
+    public readonly char Symbol = '@'; // Das Spieler-Symbol
+    private readonly char[,] _map; // Referenz auf die generierte Karte
+
+    public Player(int startX, int startY, char[,] mapData)
+    {
+        X = startX;
+        Y = startY;
+        _map = mapData;
+    }
+
+    // Zählt den gefundenen Schatz hoch
+    public void CollectTreasure()
+    {
+        TreasuresCollected++;
+    }
+
+    // Versucht, den Spieler basierend auf der gedrückten Taste zu bewegen.
+    public bool TryMove(ConsoleKeyInfo keyInfo, char wandSymbol)
+    {
+        int newX = X;
+        int newY = Y;
+
+        // 1. Bestimme die potenzielle neue Position (W/A/S/D)
+        switch (keyInfo.Key)
+        {
+            case ConsoleKey.W: // Hoch
+                newY--;
+                break;
+            case ConsoleKey.S: // Runter
+                newY++;
+                break;
+            case ConsoleKey.A: // Links
+                newX--;
+                break;
+            case ConsoleKey.D: // Rechts
+                newX++;
+                break;
+            default:
+                return false;
+        }
+
+        // 2. Prüfe, ob die potenzielle Bewegung gültig ist
+        if (IsValidMove(newX, newY, wandSymbol))
+        {
+            // 3. Aktualisiere die Spielerposition
+            X = newX;
+            Y = newY;
+            return true;
+        }
+
+        return false;
+    }
+
+    // Prüft die Kartenränder und Kollisionen mit Wänden.
+    private bool IsValidMove(int x, int y, char wandSymbol)
+    {
+        int mapHeight = _map.GetLength(0);
+        int mapWidth = _map.GetLength(1);
+
+        // Prüfe Kartenränder (wir halten den Spieler 1 Feld vom äußersten Rand entfernt)
+        if (y <= 0 || y >= mapHeight - 1 || x <= 0 || x >= mapWidth - 1)
+        {
+            return false;
+        }
+
+        // Prüfe auf Wände
+        if (_map[y, x] == wandSymbol)
+        {
+            return false;
+        }
+
+        return true;
+    }
+}
+
+
+// ******************************************************
+// II. DUNGEON GENERATOR UND SPIELLOGIK
+// ******************************************************
 
 public class RDG
 {
-    static char WAND = '#';   // Wand-Symbol
-    static char GANG = '.';   // Gang-Symbol
-    static char START = 'S';  // Start
-    static char ENDE = 'E';   // Ende
-    static char Schatz = 'T';   // Ende
-    static char Fallen = 'F';   // Ende
+    // Statische Symbole für die Karte
+    static char WAND = '#';
+    static char GANG = '.';
+    static char START = 'S';
+    static char ENDE = 'E';
+    static char Schatz = 'T';
+    static char Fallen = 'F';
+
     static Random zufaelig = new Random();
 
+    // ----------------------------------------------------------------------
+    // SPIELSCHLEIFE UND ANZEIGE
+    // ----------------------------------------------------------------------
+
+    // Rendert die Karte und den Spieler.
+    static void DisplayMap(char[,] karte, int hoehe, int breite, Player player)
+    {
+        Console.Clear();
+        Regeln_Einführung_Kurz(); // Kurze Regeln für die Anzeige in der Schleife
+        Console.WriteLine("\n--- ZUFALLSDUNGEON ---");
+
+        for (int y = 0; y < hoehe; y++)
+        {
+            for (int x = 0; x < breite; x++)
+            {
+                char symbol = karte[y, x];
+                ConsoleColor farbe = ConsoleColor.Reset;
+
+                // Prüfe, ob der Spieler an dieser Position ist
+                if (y == player.Y && x == player.X)
+                {
+                    symbol = player.Symbol;
+                    farbe = ConsoleColor.Cyan; // Spieler in Cyan
+                }
+                // Ansonsten verwende die Farben für die anderen Elemente
+                else if (symbol == START)
+                {
+                    farbe = ConsoleColor.Green;
+                }
+                else if (symbol == ENDE)
+                {
+                    farbe = ConsoleColor.Red;
+                }
+                else if (symbol == Schatz)
+                {
+                    farbe = ConsoleColor.DarkYellow;
+                }
+                else if (symbol == Fallen)
+                {
+                    farbe = ConsoleColor.Magenta;
+                }
+
+                Console.ForegroundColor = farbe;
+                Console.Write(symbol);
+                Console.ResetColor();
+            }
+            Console.WriteLine();
+        }
+        Console.WriteLine("----------------------");
+        Console.WriteLine($"Position: ({player.X}, {player.Y}) | Gesammelte Schätze: {player.TreasuresCollected}");
+        Console.WriteLine("Bewegen mit W, A, S, D. Beenden mit Q.");
+    }
+
+    // Die Haupt-Spielschleife
+    static void GameLoop(char[,] karte, int hoehe, int breite, int startX, int startY)
+    {
+        Player player = new Player(startX, startY, karte);
+
+        // Der Gang an der Startposition muss wieder auf 'S' gesetzt werden, 
+        // damit der Spieler das Startsymbol nicht überschreibt, 
+        // falls er zurückgeht.
+        if (karte[startY, startX] != START)
+        {
+            karte[startY, startX] = START;
+        }
+
+        while (true)
+        {
+            // 1. Karte anzeigen (mit Spieler)
+            DisplayMap(karte, hoehe, breite, player);
+
+            // 2. Auf Tastendruck warten
+            ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+
+            // 3. Beenden prüfen
+            if (keyInfo.Key == ConsoleKey.Q)
+            {
+                Console.WriteLine("\nSpiel beendet. Bis zum nächsten Mal!");
+                break;
+            }
+
+            // 4. Alte Position speichern
+            int oldX = player.X;
+            int oldY = player.Y;
+
+            // 5. Bewegung versuchen
+            bool moved = player.TryMove(keyInfo, WAND);
+
+            if (moved)
+            {
+                // 6. Prüfe auf Ziel oder Interaktion an der neuen Position
+                char currentTile = karte[player.Y, player.X];
+
+                if (currentTile == ENDE)
+                {
+                    // Spiel gewonnen
+                    DisplayMap(karte, hoehe, breite, player);
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"\n🎉 Glückwunsch! Sie haben den Ausgang gefunden!");
+                    Console.WriteLine($"Sie haben {player.TreasuresCollected} Schätze gesammelt.");
+                    Console.ResetColor();
+                    break;
+                }
+                else if (currentTile == Schatz)
+                {
+                    // Schatz gefunden
+                    player.CollectTreasure();
+                    karte[player.Y, player.X] = GANG; // Schatz entfernen, um ihn nicht doppelt zu zählen
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    Console.WriteLine("Glückwunsch! Sie haben einen Schatz gefunden!");
+                    Console.ResetColor();
+                }
+                else if (currentTile == Fallen)
+                {
+                    // Falle ausgelöst
+                    DisplayMap(karte, hoehe, breite, player);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n💥 BOOM! Sie sind in eine tödliche Falle getappt!");
+                    Console.WriteLine($"Spiel verloren. Gesammelte Schätze: {player.TreasuresCollected}");
+                    Console.ResetColor();
+                    break;
+                }
+
+                // Setze die alte Position, wo der Spieler stand, wieder auf GANG (außer es ist 'S' oder 'E')
+                if (karte[oldY, oldX] != START && karte[oldY, oldX] != ENDE)
+                {
+                    karte[oldY, oldX] = GANG;
+                }
+            }
+        }
+        // Warten auf Eingabe, bevor das Konsolenfenster geschlossen wird
+        Console.ReadKey();
+    }
+
+    // Eine schlankere Version der Regeln für die Anzeige in der Schleife
+    static void Regeln_Einführung_Kurz()
+    {
+        Console.WriteLine("Ziel: 'E' erreichen (Ende). Schatz: 'T', Falle: 'F'. Spieler: '@'");
+    }
+
+    // ----------------------------------------------------------------------
+    // MAIN METHODE & GENERIERUNGSLOGIK
+    // ----------------------------------------------------------------------
 
     static void Main(string[] args)
     {
         Regeln_Einführung();
-        // TODO: Was noch gemacht werden muss
-        // Spieler einbauen
-
-        // Optional Sachen die wir noch machen können
-        // Wenn das Dungeon geschafft wurde, Abfrage, ob man noch eines spielen will oder das Programm verlassen will
-        // Weitere Ideen hier eintragen
 
         Console.WriteLine("Wie groß soll die Höhe des Dungeons sein (min 10 & max 25)?");
         int hoehe = Eingabe(10, 25);
@@ -35,6 +264,8 @@ public class RDG
         Console.WriteLine($"Dungeon erstellt mit Höhe {hoehe} und Breite {breite}.");
 
         char[,] karte = InitialisiereKarte(breite, hoehe);
+
+        // Start und Ende erstellen, Positionen in startX, startY speichern
         Start_EndeErstellen(karte, breite, hoehe, out int startX, out int startY, out int endX, out int endY);
         ErzeugeHauptWeg(karte, startX, startY, endX, endY);
 
@@ -77,43 +308,14 @@ public class RDG
         }
         SpeichereKarteMitAbfrage(karte, hoehe, breite);
 
-        Console.WriteLine("---ZUFALLSDUNGEON---");
-        // Karte ausgeben
-        for (int y = 0; y < hoehe; y++)
-        {
-            for (int x = 0; x < breite; x++)
-            {
-                char symbol = karte[y, x]; // aktuelles Zeichen holen
-
-                if (symbol == 'S')
-                {
-                    Console.ForegroundColor = ConsoleColor.Green;   // Start grün
-                }
-                else if (symbol == 'E')
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;     // Ende rot
-                }
-                else if (symbol == 'T')
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkYellow;
-                }
-                else if (symbol == 'F')
-                {
-                    Console.ForegroundColor = ConsoleColor.Magenta;
-                }
-                else
-                {
-                    Console.ResetColor();
-                }
-
-                Console.Write(symbol);
-                Console.ResetColor(); // Farbe zurücksetzen
-            }
-            Console.WriteLine();
-        }
-        Console.ReadKey();
-
+        // Starte das Spiel
+        GameLoop(karte, hoehe, breite, startX, startY);
     }
+
+    // ----------------------------------------------------------------------
+    // HELFER-METHODEN
+    // ----------------------------------------------------------------------
+
     static int Eingabe(int min, int max)
     {
         int wert;
@@ -152,6 +354,7 @@ public class RDG
 
         return karte;
     }
+
     static void Start_EndeErstellen(char[,] karte, int breite, int hoehe, out int startX, out int startY, out int endX, out int endY)
     {
         int minAbstandY = zufaelig.Next(1, Math.Max(2, hoehe / 5));
@@ -169,6 +372,7 @@ public class RDG
         karte[endY, endX] = ENDE;
 
     }
+
     static void ErzeugeHauptWeg(char[,] karte, int startX, int startY, int endX, int endY)
     {
         int festX = startX;
@@ -177,19 +381,19 @@ public class RDG
         {
             if (endY > festY)
             {
-                festY++; karte[festY, festX] = '.';
+                festY++; karte[festY, festX] = GANG;
             }
             else if (endY < festY)
             {
-                festY--; karte[festY, festX] = '.';
+                festY--; karte[festY, festX] = GANG;
             }
             if (endX > festX)
             {
-                festX++; karte[festY, festX] = '.';
+                festX++; karte[festY, festX] = GANG;
             }
             else if (endX < festX)
             {
-                festX--; karte[festY, festX] = '.';
+                festX--; karte[festY, festX] = GANG;
             }
             if (festX == endX && festY == endY)
             {
@@ -198,6 +402,7 @@ public class RDG
         }
         karte[endY, endX] = ENDE;
     }
+
     static void ErzeugeNebenWegeKlein(char[,] karte, int anzahlNebenwege, int startX, int startY, int endX, int endY, int hoehe, int breite)
     {
         for (int i = 0; i < anzahlNebenwege; i++)
@@ -230,6 +435,7 @@ public class RDG
 
         }
     }
+
     static void ErzeugeNebenWegeGroß(char[,] karte, int anzahlNebenwege, int startX, int startY, int endX, int endY, int hoehe, int breite)
     {
         for (int i = 0; i < anzahlNebenwege; i++)
@@ -307,13 +513,14 @@ public class RDG
             }
         }
     }
+
     static void ErzeugeSchaetzeUndFallen(char[,] karte, int hoehe, int breite)
     {
         for (int y = 0; y < hoehe; y++)
         {
             for (int x = 0; x < breite; x++)
             {
-                if (karte[y, x] == '.')
+                if (karte[y, x] == GANG)
                 {
                     int zahl = zufaelig.Next(1, 101);
                     if (zahl <= 5)
@@ -333,6 +540,7 @@ public class RDG
             }
         }
     }
+
     static void ErzeugeRaum(char[,] karte, int hoehe, int breite)
     {
         int raumHoehe = zufaelig.Next(4, 8);
@@ -372,6 +580,7 @@ public class RDG
         }
         karte[eingangY, eingangX] = GANG;
     }
+
     static void SpeichereKarteMitAbfrage(char[,] karte, int hoehe, int breite)
     {
         Console.WriteLine("Möchten Sie die Karte als Datei speichern? (ja/nein)");
@@ -387,57 +596,4 @@ public class RDG
                 {
                     string dateiname = Console.ReadLine();
 
-                    if (string.IsNullOrWhiteSpace(dateiname))
-                    {
-                        Console.WriteLine("Ungültiger Dateiname! Bitte erneut eingeben:");
-                        continue;
-                    }
-
-                    if (!dateiname.EndsWith(".txt"))
-                    {
-                        dateiname += ".txt";
-                    }
-
-                    string pfad = Path.Combine(Directory.GetCurrentDirectory(), dateiname);
-
-                    using (StreamWriter writer = new StreamWriter(pfad))
-                    {
-                        for (int y = 0; y < hoehe; y++)
-                        {
-                            for (int x = 0; x < breite; x++)
-                            {
-                                writer.Write(karte[y, x]);
-                            }
-                            writer.WriteLine();
-                        }
-                    }
-
-                    Console.WriteLine($"Karte erfolgreich gespeichert unter: {pfad}");
-                    break;
-                }
-                break;
-            }
-            else if (eingabe == "nein")
-            {
-                Console.WriteLine("Karte wurde nicht gespeichert.");
-                break;
-            }
-            else
-            {
-                Console.WriteLine("Ungültige Eingabe! Bitte 'ja' oder 'nein' eingeben.");
-            }
-        }
-    }
-    static void Regeln_Einführung()
-    {
-        Console.WriteLine("Willkommen zum Random Dungeon Generator by XP !");
-        Console.WriteLine("In diesem Spiel geht es darum, einen Dungeon zu entkommen, Schätze zu finden und Fallen zu vermeiden.");
-        Console.WriteLine("Der Startpunkt ist mit 'S' markiert und das Ende mit 'E'.");
-        Console.WriteLine("Schätze sind mit 'T' und Fallen mit 'F' gekennzeichnet.");
-        Console.WriteLine("Spieler ist mit '@' gekenzeichnet");
-        Console.WriteLine("Viel Glück und viel Spaß beim Erkunden des Dungeons!");
-        Console.WriteLine("Bitte nur Enter drücken, um fortzufahren...");
-        while (Console.ReadKey(true).Key != ConsoleKey.Enter) { }
-        Console.Clear();
-    }
-}
+                    if (string.
