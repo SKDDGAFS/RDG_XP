@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO; // Für Dateizugriff damit wir die Karte speichern können als Textdatei
+using System.Threading;
 
 public class RDG
 {
@@ -15,23 +16,70 @@ public class RDG
     {
         // TODO: Was noch gemacht werden muss
         // kommentare und struktur verbessern und lesbarer machen
-        // Regeln und Einführung mussen überarbeitet werden 
+
 
         // Optional Sachen die wir noch machen können
-        // Menü erstellen
-        // Wenn das Dungeon geschafft wurde, Abfrage, ob man noch eines spielen will oder das Programm verlassen will
+        // schwierigkeitsgrad auswählen (mehr schätze/fallen/leben)
         // Weitere Ideen hier eintragen
 
-        Console.CursorVisible = false;
+        while (true)
+        {
+            Console.CursorVisible = false;
+            Console.WriteLine("Willkommen zum Random Dungeon Generator!");
+            menü();
+            StarteSpiel();
+        }
+    }
 
-        Regeln_Einführung();
+    static void menü()
+    {
+        while (true)
+        {
+            Console.Clear();
+            Console.WriteLine("1. Neues Spiel starten");
+            Console.WriteLine("2. Anleitung lesen");
+            Console.WriteLine("3. Programm beenden");
+            Console.Write("Auswahl: ");
 
+            string eingabe = Console.ReadLine();
+
+            switch (eingabe)
+            {
+                case "1":
+                    Console.Clear();
+                    return;
+                case "2":
+                    Console.Clear();
+                    Einführung();
+                    break;
+
+                case "3":
+                    Console.Clear();
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("===== Beenden – Auf Wiedersehen! =====");
+                    Console.ResetColor();
+                    Thread.Sleep(2000);
+                    Environment.Exit(0);
+                    break;
+
+                default:
+                    Console.Clear();
+                    Console.WriteLine("Ungültige Eingabe! Bitte erneut eingeben...");
+                    Thread.Sleep(1000);
+                    break;
+            }
+        }
+    }
+
+    static void StarteSpiel()
+    {
         Console.WriteLine("Wie groß soll die Höhe des Dungeons sein (min 10 & max 25)?");
         int hoehe = Eingabe(10, 25);
 
         Console.WriteLine("Wie groß soll die Breite des Dungeons sein (min 10 & max 50)?");
         int breite = Eingabe(10, 50);
 
+        Console.Clear();
         Console.WriteLine($"Dungeon erstellt mit Höhe {hoehe} und Breite {breite}.");
 
         char[,] karte = InitialisiereKarte(breite, hoehe);
@@ -40,7 +88,11 @@ public class RDG
 
         int minNebenwege = 7 + (hoehe - 10) * 13 / 15;
         int maxNebenwege = 14 + (breite - 10) * 20 / 40;
-        int anzahlNebenwege = zufaelig.Next(minNebenwege, maxNebenwege + 1);
+
+        int min = Math.Min(minNebenwege, maxNebenwege);
+        int max = Math.Max(minNebenwege, maxNebenwege);
+
+        int anzahlNebenwege = zufaelig.Next(min, max + 1);
 
         if (hoehe <= 15 && breite <= 25)
         {
@@ -74,10 +126,12 @@ public class RDG
         {
             ErzeugeRaum(karte, hoehe, breite);
         }
-
-        SpeichereKarteMitAbfrage(karte, hoehe, breite);
+        karte[startY, startX] = START;
         karte[endY, endX] = ENDE;
 
+        SpeichereKarteMitAbfrage(karte, hoehe, breite);
+
+        Console.WriteLine();
         Console.WriteLine("--- ZUFALLSDUNGEON ---");
         Console.WriteLine("Steuere den Spieler mit W (hoch), A (links), S (runter), D (rechts).");
         Console.WriteLine("Bitte nur Enter drücken, um fortzufahren...");
@@ -87,7 +141,7 @@ public class RDG
         int spielerX = startX;
         int spielerY = startY;
 
-        int leben = 3;
+        int leben = 1;
         int schatzAnzahl = 0;
 
 
@@ -106,43 +160,38 @@ public class RDG
 
         ZeichneKarte(karte, spielerX, spielerY, hoehe, breite);
 
-        Console.SetCursorPosition(0, hoehe + 1);
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("Herzlichen Glückwunsch! Du hast das Ende erreicht!");
-        Console.ResetColor();
-
-        Console.WriteLine("Bitte nur Enter drücken, um das Programm zu beenden...");
-        while (Console.ReadKey(true).Key != ConsoleKey.Enter) { }
-
-    }
-    static void ZeichneKarte(char[,] karte, int spielerX, int spielerY, int hoehe, int breite)
-    {
-        Console.SetCursorPosition(0, 0);
-        for (int y = 0; y < hoehe; y++)
+        if (leben <= 0)
         {
-            for (int x = 0; x < breite; x++)
-            {
-                if (x == spielerX && y == spielerY)
-                {
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.Write('@');
-                }
-                else
-                {
-                    char symbol = karte[y, x];
-                    if (symbol == 'S') Console.ForegroundColor = ConsoleColor.Green;
-                    else if (symbol == 'E') Console.ForegroundColor = ConsoleColor.Red;
-                    else if (symbol == 'T') Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    else if (symbol == 'F') Console.ForegroundColor = ConsoleColor.Magenta;
-                    else Console.ResetColor();
-
-                    Console.Write(symbol);
-                }
-                Console.ResetColor();
-            }
+            Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine();
+            Console.WriteLine("Du hast kein Leben mehr! Spiel vorbei.");
+            Console.WriteLine($"Du hast insgesamt {schatzAnzahl} Schätze gesammelt.      ");
+            Console.WriteLine();
+            Console.ResetColor();
+            Thread.Sleep(2000);
         }
+        else if (zielErreicht)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("Herzlichen Glückwunsch! Du hast das Ende erreicht!");
+            Console.WriteLine($"Du hast {schatzAnzahl} Schätze gesammelt.           ");
+            Console.WriteLine($"und noch {leben} Leben übrig.");
+            Console.WriteLine();
+            Console.ResetColor();
+            Thread.Sleep(2000);
+        }
+        else
+        {
+            Console.WriteLine("Das Spiel wurde beendet.");
+        }
+
+        Console.WriteLine("Drücke Enter, um wieder zum Menü zu gelangen...");
+        while (Console.ReadKey(true).Key != ConsoleKey.Enter) { }
+        Console.Clear();
+
     }
+
+
     static int Eingabe(int min, int max)
     {
         int wert;
@@ -205,21 +254,29 @@ public class RDG
         while (true)
         {
             if (endY > festY)
+            {
                 festY++;
+            }
             else if (endY < festY)
+            {
                 festY--;
-
+            }
             karte[festY, festX] = '.';
 
             if (endX > festX)
+            {
                 festX++;
+            }
             else if (endX < festX)
+            {
                 festX--;
-
+            }
             karte[festY, festX] = '.';
 
             if (festX == endX && festY == endY)
+            {
                 break;
+            }
         }
         karte[endY, endX] = ENDE;
     }
@@ -235,16 +292,31 @@ public class RDG
 
             for (int l = 0; l < laenge; l++)
             {
-                if (richtung == 0) festY--;
-                if (richtung == 1) festY++;
-                if (richtung == 2) festX--;
-                if (richtung == 3) festX++;
+                if (richtung == 0)
+                {
+                    festY--;
+                }
+                if (richtung == 1)
+                {
+                    festY++;
+                }
+                if (richtung == 2)
+                {
+                    festX--;
+                }
+                if (richtung == 3)
+                {
+                    festX++;
+                }
 
                 if (festX <= 0 || festX >= breite - 1 || festY <= 0 || festY >= hoehe - 1)
+                {
                     break;
+                }
                 if (karte[festY, festX] != WAND)
+                {
                     continue;
-
+                }
                 karte[festY, festX] = GANG;
             }
         }
@@ -265,25 +337,52 @@ public class RDG
             for (int l = 0; l < laenge; l++)
             {
                 int richtung = zufaelig.Next(0, 4);
-                if (richtung == 0 && festY > 1) festY--;
-                else if (richtung == 1 && festY < hoehe - 2) festY++;
-                else if (richtung == 2 && festX > 1) festX--;
-                else if (richtung == 3 && festX < breite - 2) festX++;
+                if (richtung == 0 && festY > 1)
+                {
+                    festY--;
+                }
+                else if (richtung == 1 && festY < hoehe - 2)
+                {
+                    festY++;
+                }
+                else if (richtung == 2 && festX > 1)
+                {
+                    festX--;
+                }
+                else if (richtung == 3 && festX < breite - 2)
+                {
+                    festX++;
+                }
 
                 if (festX <= 0 || festX >= breite - 1 || festY <= 0 || festY >= hoehe - 1)
+                {
                     break;
+                }
                 if (karte[festY, festX] == GANG || (festX == endX && festY == endY))
+                {
                     continue;
-
+                }
                 int angrenzendeGange = 0;
-                if (karte[festY - 1, festX] == GANG) angrenzendeGange++;
-                if (karte[festY + 1, festX] == GANG) angrenzendeGange++;
-                if (karte[festY, festX - 1] == GANG) angrenzendeGange++;
-                if (karte[festY, festX + 1] == GANG) angrenzendeGange++;
-
+                if (karte[festY - 1, festX] == GANG)
+                {
+                    angrenzendeGange++;
+                }
+                if (karte[festY + 1, festX] == GANG)
+                {
+                    angrenzendeGange++;
+                }
+                if (karte[festY, festX - 1] == GANG)
+                {
+                    angrenzendeGange++;
+                }
+                if (karte[festY, festX + 1] == GANG)
+                {
+                    angrenzendeGange++;
+                }
                 if (angrenzendeGange > 1)
+                {
                     continue;
-
+                }
                 karte[festY, festX] = GANG;
             }
         }
@@ -302,9 +401,13 @@ public class RDG
                     {
                         int ToderF = zufaelig.Next(0, 2);
                         if (ToderF == 0)
+                        {
                             karte[y, x] = Schatz;
+                        }
                         else
+                        {
                             karte[y, x] = Fallen;
+                        }
                     }
                 }
             }
@@ -326,10 +429,18 @@ public class RDG
         int raumX = eingangX + 1;
         int raumY = eingangY - raumHoehe / 2;
 
-        if (raumX + raumBreite >= breite - 1) return;
-        if (raumY < 1) raumY = 1;
-        if (raumY + raumHoehe >= hoehe - 1) return;
-
+        if (raumX + raumBreite >= breite - 1)
+        {
+            return;
+        }
+        if (raumY < 1)
+        {
+            raumY = 1;
+        }
+        if (raumY + raumHoehe >= hoehe - 1)
+        {
+            return;
+        }
         for (int y = 0; y < raumHoehe; y++)
         {
             for (int x = 0; x < raumBreite; x++)
@@ -403,18 +514,60 @@ public class RDG
         }
     }
 
-    static void Regeln_Einführung()
+    static void Einführung()
     {
-        Console.WriteLine("Willkommen zum Random Dungeon Generator by XP!");
-        Console.WriteLine("In diesem Spiel geht es darum, einen Dungeon zu entkommen, Schätze zu finden und Fallen zu vermeiden.");
-        Console.WriteLine("Der Startpunkt ist mit 'S' markiert und das Ende mit 'E'.");
-        Console.WriteLine("Schätze sind mit 'T' und Fallen mit 'F' gekennzeichnet.");
-        Console.WriteLine("Spieler ist mit '@' gekennzeichnet.");
-        Console.WriteLine("Viel Glück und viel Spaß beim Erkunden des Dungeons!");
-        Console.WriteLine("Bitte nur Enter drücken, um fortzufahren...");
-        while (Console.ReadKey(true).Key != ConsoleKey.Enter) { }
         Console.Clear();
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("===== RANDOM DUNGEON GENERATOR =====");
+        Console.ResetColor();
+        Console.WriteLine();
+
+        Console.WriteLine("Du befindest dich in einem zufällig erzeugten Dungeon voller Geheimnisse.");
+        Console.WriteLine("Dein Ziel ist einfach: Finde den Ausgang und überlebe dabei die Gefahren.");
+        Console.WriteLine();
+
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("S  = Startpunkt");
+        Console.ResetColor();
+
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("E  = Ausgang");
+        Console.ResetColor();
+
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("T  = Schatz (sammelbar)");
+        Console.ResetColor();
+
+        Console.ForegroundColor = ConsoleColor.Magenta;
+        Console.WriteLine("F  = Falle (zieht dir ein Leben ab)");
+        Console.ResetColor();
+
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.DarkRed;
+        Console.WriteLine("Du startest mit 3 Leben.");
+        Console.WriteLine("Verlierst du alle Leben, ist das Spiel vorbei.");
+        Console.ResetColor();
+
+        Console.WriteLine();
+        Console.WriteLine("Du steuerst deinen Charakter mit:");
+        Console.WriteLine("W = hoch,  A = links,  S = runter,  D = rechts");
+        Console.WriteLine();
+
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("Viel Glück... du wirst es brauchen.");
+        Console.ResetColor();
+
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("Drücke Enter, um zum Menü zurückzukehren...");
+        Console.ResetColor();
+
+        while (Console.ReadKey(true).Key != ConsoleKey.Enter) { }
+
+        Console.Clear();
+        menü();
     }
+
 
     static bool SpielerBewegen(char[,] karte, ref int spielerX, ref int spielerY, int endX, int endY, ref int leben, ref int schatzAnzahl)
     {
@@ -455,28 +608,21 @@ public class RDG
         if (zielFeld == Schatz)
         {
             schatzAnzahl++;
-            Console.SetCursorPosition(0, karte.GetLength(0) + 2);
+            Console.SetCursorPosition(0, karte.GetLength(0) + 3);
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"Du hast einen Schatz gefunden! Gesamt: {schatzAnzahl}      ");
+            Console.WriteLine($"Du hast einen Schatz gefunden! Gesamt: {schatzAnzahl}");
             Console.ResetColor();
         }
-
         if (zielFeld == Fallen)
         {
             leben--;
-            Console.SetCursorPosition(0, karte.GetLength(0) + 2);
+            Console.SetCursorPosition(0, karte.GetLength(0));
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Du bist in eine Falle getappt! Leben übrig: {leben}");
             Console.ResetColor();
-
             if (leben <= 0)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Du hast kein Leben mehr! Spiel vorbei.");
-                Console.ResetColor();
-                Console.WriteLine("Bitte nur Enter drücken, um das Programm zu beenden...");
-                while (Console.ReadKey(true).Key != ConsoleKey.Enter) { }
-                Environment.Exit(0);
+                return true;
             }
         }
 
@@ -493,7 +639,46 @@ public class RDG
         return (spielerX == endX && spielerY == endY);
     }
 
-
-
-
+    static void ZeichneKarte(char[,] karte, int spielerX, int spielerY, int hoehe, int breite)
+    {
+        Console.SetCursorPosition(0, 0);
+        for (int y = 0; y < hoehe; y++)
+        {
+            for (int x = 0; x < breite; x++)
+            {
+                if (x == spielerX && y == spielerY)
+                {
+                    Console.ForegroundColor = ConsoleColor.Blue;
+                    Console.Write('@');
+                }
+                else
+                {
+                    char symbol = karte[y, x];
+                    if (symbol == 'S')
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                    }
+                    else if (symbol == 'E')
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                    }
+                    else if (symbol == 'T')
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    }
+                    else if (symbol == 'F')
+                    {
+                        Console.ForegroundColor = ConsoleColor.Magenta;
+                    }
+                    else
+                    {
+                        Console.ResetColor();
+                    }
+                    Console.Write(symbol);
+                }
+                Console.ResetColor();
+            }
+            Console.WriteLine();
+        }
+    }
 }
