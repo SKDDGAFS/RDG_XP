@@ -16,7 +16,6 @@ public class RDG
     {
         // TODO: Was noch gemacht werden muss
         // kommentare und struktur verbessern und lesbarer machen
-        
 
 
         // Optional Sachen die wir noch machen können
@@ -217,7 +216,7 @@ public class RDG
             Console.WriteLine("Herzlichen Glückwunsch! Du hast das Ende erreicht!");
             Console.WriteLine($"Du hast {schatzAnzahl} Schätze gesammelt.");
             Console.WriteLine($"und noch {leben} Leben übrig.");
-            Console.WriteLine();
+            Console.WriteLine("                                                       ");
             Console.ResetColor();
             Thread.Sleep(2000);   // 2 Sekunden warten
         }
@@ -365,7 +364,7 @@ public class RDG
     static void ErzeugeNebenWegeKlein(char[,] karte, int anzahlNebenwege, int startX, int startY, int endX, int endY, int hoehe, int breite)
     {
         // Schleife für alle Nebenwege
-        for (int i = 0; i < anzahlNebenwege; i++)
+        for (int i = 0; i < anzahlNebenwege + 5; i++)
         {
             // Startpunkt des Nebenwegs (immer vom Start ausgehend)
             int festX = startX;
@@ -407,12 +406,11 @@ public class RDG
     // Erzeugt längere Nebenwege für große Dungeons
     static void ErzeugeNebenWegeGroß(char[,] karte, int anzahlNebenwege, int startX, int startY, int endX, int endY, int hoehe, int breite)
     {
-        // Schleife für alle Nebenwege
+
         for (int i = 0; i < anzahlNebenwege; i++)
         {
             int festX, festY;
 
-            // Startpunkt des Nebenwegs: zufälliger Gang auf der Karte
             do
             {
                 festX = zufaelig.Next(1, breite - 1);
@@ -420,57 +418,45 @@ public class RDG
             }
             while (karte[festY, festX] != GANG);
 
-            // Länge des Nebenwegs 
-            int laenge = zufaelig.Next(30, 70);
+            int laenge = zufaelig.Next(40, 90); // längere Wege
 
-            // Nebenweg Schritt für Schritt erzeugen
             for (int l = 0; l < laenge; l++)
             {
-                // Zufällige Richtung wählen
                 int richtung = zufaelig.Next(0, 4);
 
-                // Bewegung nur durchführen, wenn innerhalb der Karte
-                if (richtung == 0 && festY > 1)          // oben
-                    festY--;
-                else if (richtung == 1 && festY < hoehe - 2) // unten
-                    festY++;
-                else if (richtung == 2 && festX > 1)     // links
-                    festX--;
-                else if (richtung == 3 && festX < breite - 2) // rechts
-                    festX++;
+                int nx = festX;
+                int ny = festY;
 
-                // Wenn der Weg die Karte verlassen würde → abbrechen
-                if (festX <= 0 || festX >= breite - 1 || festY <= 0 || festY >= hoehe - 1)
-                {
+                if (richtung == 0) ny--;
+                if (richtung == 1) ny++;
+                if (richtung == 2) nx--;
+                if (richtung == 3) nx++;
+
+                if (nx <= 0 || nx >= breite - 1 || ny <= 0 || ny >= hoehe - 1)
                     break;
-                }
 
-                // Keine Überschreibung von bestehenden Gängen oder dem Endpunkt
-                if (karte[festY, festX] == GANG || (festX == endX && festY == endY))
-                {
+                if (nx == endX && ny == endY)
                     continue;
-                }
 
-                // Prüfen, wie viele angrenzende Felder bereits Gänge sind
-                // → verhindert große offene Flächen oder Schleifen
-                int angrenzendeGange = 0;
+                // Schleifen erlauben, aber nicht zu viele
+                int angrenzende = 0;
+                if (karte[ny - 1, nx] == GANG) angrenzende++;
+                if (karte[ny + 1, nx] == GANG) angrenzende++;
+                if (karte[ny, nx - 1] == GANG) angrenzende++;
+                if (karte[ny, nx + 1] == GANG) angrenzende++;
 
-                if (karte[festY - 1, festX] == GANG) angrenzendeGange++;
-                if (karte[festY + 1, festX] == GANG) angrenzendeGange++;
-                if (karte[festY, festX - 1] == GANG) angrenzendeGange++;
-                if (karte[festY, festX + 1] == GANG) angrenzendeGange++;
-
-                // Wenn mehr als 1 Gang angrenzend ist → kein neuer Weg
-                if (angrenzendeGange > 1)
-                {
+                if (angrenzende > 2) // vorher war 1 → viel zu streng
                     continue;
-                }
 
-                // Feld als Gang markieren
+                festX = nx;
+                festY = ny;
+
                 karte[festY, festX] = GANG;
             }
         }
     }
+
+
 
     // Erzeugt zufällig Schätze und Fallen auf der Karte mit 5% Wahrscheinlichkeit pro Feld
     static void ErzeugeSchaetzeUndFallen(char[,] karte, int hoehe, int breite)
@@ -565,62 +551,76 @@ public class RDG
     }
 
 
+    // Fragt den Spieler, ob die Karte gespeichert werden soll, und speichert sie ggf. als .txt-Datei
     static void SpeichereKarteMitAbfrage(char[,] karte, int hoehe, int breite)
     {
         Console.WriteLine("Möchten Sie die Karte als Datei speichern? (ja/nein)");
+
+        // Endlosschleife, bis eine gültige Antwort kommt
         while (true)
         {
             string eingabe = Console.ReadLine().ToLower();
 
+            // Spieler möchte speichern
             if (eingabe == "ja")
             {
                 Console.WriteLine("Bitte geben Sie den Dateinamen ein (ohne Endung, z. B. dungeon):");
 
+                // Schleife für Dateinamen-Eingabe
                 while (true)
                 {
                     string dateiname = Console.ReadLine();
 
+                    // Leerer oder ungültiger Name → erneut fragen
                     if (string.IsNullOrWhiteSpace(dateiname))
                     {
                         Console.WriteLine("Ungültiger Dateiname! Bitte erneut eingeben:");
                         continue;
                     }
 
+                    // Falls keine .txt-Endung angegeben wurde → automatisch hinzufügen
                     if (!dateiname.EndsWith(".txt"))
                     {
                         dateiname += ".txt";
                     }
 
+                    // Speicherpfad im aktuellen Programmverzeichnis
                     string pfad = Path.Combine(Directory.GetCurrentDirectory(), dateiname);
 
+                    // Datei schreiben
                     using (StreamWriter writer = new StreamWriter(pfad))
                     {
+                        // Karte Zeile für Zeile in die Datei schreiben
                         for (int y = 0; y < hoehe; y++)
                         {
                             for (int x = 0; x < breite; x++)
                             {
                                 writer.Write(karte[y, x]);
                             }
-                            writer.WriteLine();
+                            writer.WriteLine(); // Zeilenumbruch nach jeder Kartenzeile
                         }
                     }
 
                     Console.WriteLine($"Karte erfolgreich gespeichert unter: {pfad}");
-                    break;
+                    break; // Dateinamen-Schleife verlassen
                 }
-                break;
+
+                break; // Hauptschleife verlassen
             }
+            // Spieler möchte NICHT speichern
             else if (eingabe == "nein")
             {
                 Console.WriteLine("Karte wurde nicht gespeichert.");
                 break;
             }
+            // Ungültige Eingabe → erneut fragen
             else
             {
                 Console.WriteLine("Ungültige Eingabe! Bitte 'ja' oder 'nein' eingeben.");
             }
         }
     }
+
 
     // Einführung und Spielanleitung 
     static void Einführung()
@@ -678,42 +678,42 @@ public class RDG
     }
 
 
-    static bool SpielerBewegen(char[,] karte, ref int spielerX, ref int spielerY, int endX, int endY, ref int leben, ref int schatzAnzahl)
+    // Bewegt den Spieler basierend auf der Tastatureingabe.
+    // Gibt true zurück, wenn das Ziel erreicht wurde oder der Spieler gestorben ist.
+    static bool SpielerBewegen(char[,] karte, ref int spielerX, ref int spielerY,
+                               int endX, int endY, ref int leben, ref int schatzAnzahl)
     {
+        // Taste einlesen (WASD), ohne sie auf dem Bildschirm anzuzeigen
         ConsoleKeyInfo taste = Console.ReadKey(true);
 
+        // Neue Zielposition vorbereiten (erstmal alte Position)
         int neuX = spielerX;
         int neuY = spielerY;
 
-        if (taste.Key == ConsoleKey.W)
+        // Bewegung anhand der Taste bestimmen
+        if (taste.Key == ConsoleKey.W) neuY--;   // hoch
+        else if (taste.Key == ConsoleKey.S) neuY++; // runter
+        else if (taste.Key == ConsoleKey.A) neuX--; // links
+        else if (taste.Key == ConsoleKey.D) neuX++; // rechts
+
+        // Prüfen, ob die neue Position außerhalb der Karte liegt
+        if (neuX < 0 || neuX >= karte.GetLength(1) ||
+            neuY < 0 || neuY >= karte.GetLength(0))
         {
-            neuY--;
-        }
-        else if (taste.Key == ConsoleKey.S)
-        {
-            neuY++;
-        }
-        else if (taste.Key == ConsoleKey.A)
-        {
-            neuX--;
-        }
-        else if (taste.Key == ConsoleKey.D)
-        {
-            neuX++;
+            return false; // Bewegung ungültig
         }
 
-        // Grenzen prüfen
-        if (neuX < 0 || neuX >= karte.GetLength(1) || neuY < 0 || neuY >= karte.GetLength(0))
-        {
-            return false;
-        }
-        // Nur begehbare Felder erlauben
+        // Ziel-Feld auslesen
         char zielFeld = karte[neuY, neuX];
-        if (zielFeld != GANG && zielFeld != START && zielFeld != ENDE && zielFeld != Schatz && zielFeld != Fallen)
+
+        // Nur bestimmte Felder dürfen betreten werden
+        if (zielFeld != GANG && zielFeld != START && zielFeld != ENDE &&
+            zielFeld != Schatz && zielFeld != Fallen)
         {
-            return false;
+            return false; // Wand oder unbetretbares Feld
         }
 
+        // Schatz gefunden
         if (zielFeld == Schatz)
         {
             schatzAnzahl++;
@@ -722,6 +722,8 @@ public class RDG
             Console.WriteLine($"Du hast einen Schatz gefunden! Gesamt: {schatzAnzahl}");
             Console.ResetColor();
         }
+
+        // Falle ausgelöst
         if (zielFeld == Fallen)
         {
             leben--;
@@ -729,12 +731,16 @@ public class RDG
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Du bist in eine Falle getappt! Leben übrig: {leben}");
             Console.ResetColor();
+
+            // Spieler tot → Spielende
             if (leben <= 0)
             {
                 return true;
             }
         }
 
+        // Altes Spielerfeld wieder zu einem normalen Gang machen
+        // (aber Start und Ende nicht überschreiben)
         if (karte[spielerY, spielerX] != START && karte[spielerY, spielerX] != ENDE)
         {
             karte[spielerY, spielerX] = GANG;
@@ -744,49 +750,54 @@ public class RDG
         spielerX = neuX;
         spielerY = neuY;
 
-        // Ziel erreicht?
+        // Prüfen, ob das Ziel erreicht wurde
         return (spielerX == endX && spielerY == endY);
     }
 
+    // Zeichnet die komplette Karte im Konsolenfenster.
+    // Der Spieler wird farbig hervorgehoben und überdeckt das Feld, auf dem er steht.
     static void ZeichneKarte(char[,] karte, int spielerX, int spielerY, int hoehe, int breite)
     {
+        // Cursor immer oben links setzen, damit die Karte "aktualisiert" wird
         Console.SetCursorPosition(0, 0);
+
+        // Zeilenweise durch die Karte laufen
         for (int y = 0; y < hoehe; y++)
         {
             for (int x = 0; x < breite; x++)
             {
+                // Spielerposition prüfen
                 if (x == spielerX && y == spielerY)
                 {
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.Write('@');
+                    Console.ForegroundColor = ConsoleColor.Blue; // Spielerfarbe
+                    Console.Write('@'); // Spieler-Symbol
                 }
                 else
                 {
+                    // Normales Kartensymbol auslesen
                     char symbol = karte[y, x];
-                    if (symbol == 'S')
-                    {
+
+                    // Farbe je nach Symbol setzen
+                    if (symbol == 'S')                     // Start
                         Console.ForegroundColor = ConsoleColor.Green;
-                    }
-                    else if (symbol == 'E')
-                    {
+                    else if (symbol == 'E')                // Ende
                         Console.ForegroundColor = ConsoleColor.Red;
-                    }
-                    else if (symbol == 'T')
-                    {
+                    else if (symbol == 'T')                // Schatz
                         Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    }
-                    else if (symbol == 'F')
-                    {
+                    else if (symbol == 'F')                // Falle
                         Console.ForegroundColor = ConsoleColor.Magenta;
-                    }
                     else
-                    {
-                        Console.ResetColor();
-                    }
+                        Console.ResetColor();              // Normale Gänge/Wände
+
+                    // Symbol zeichnen
                     Console.Write(symbol);
                 }
+
+                // Nach jedem Zeichen Farbe zurücksetzen
                 Console.ResetColor();
             }
+
+            // Zeilenumbruch nach jeder Kartenzeile
             Console.WriteLine();
         }
     }
