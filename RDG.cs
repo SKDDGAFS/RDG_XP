@@ -6,6 +6,7 @@ using System.Threading;
 
 public class RDG
 {
+
     static char WAND = '#';   // Wand-Symbol
     static char GANG = '.';   // Gang-Symbol
     static char START = 'S';  // Start
