@@ -2,11 +2,11 @@
 //https://github.com/SKDDGAFS/RDG_XP 
 using System;
 using System.IO; // Für Dateizugriff damit wir die Karte speichern können als Textdatei
+using System.Text;
 using System.Threading;
 
 public class RDG
 {
-
     static char WAND = '#';   // Wand-Symbol
     static char GANG = '.';   // Gang-Symbol
     static char START = 'S';  // Start
@@ -28,12 +28,13 @@ public class RDG
         // Endlosschleife: Menü nach jedem Spiel erneut anzeigen
         while (true)
         {
+            int Zaehler = 0;
             // Cursor ausblenden (verhindert Flackern)
             Console.CursorVisible = false;
 
             Console.WriteLine("Willkommen zum Random Dungeon Generator!");
             menü();
-            StarteSpiel();
+            StarteSpiel(Zaehler);
         }
 
     }
@@ -89,7 +90,7 @@ public class RDG
     }
 
     // Startet Spiel: Dungeon erzeugen, Spieler steuern, Ergebnis anzeigen
-    static void StarteSpiel()
+    static void StarteSpiel(int Zaehler)
     {
         // Dungeon-Höhe abfragen
         Console.WriteLine("Wie groß soll die Höhe des Dungeons sein (min 10 & max 25)?");
@@ -122,6 +123,13 @@ public class RDG
         // Zufällige Anzahl an Nebenwegen bestimmen
         int anzahlNebenwege = zufaelig.Next(min, max + 1);
 
+        // Mindestanzahl sicherstellen
+        anzahlNebenwege = Math.Max(anzahlNebenwege, 6);
+
+        // Leicht erhöhen
+        anzahlNebenwege += 2;
+
+
         // Je nach Dungeon-Größe unterschiedliche Nebenweg-Algorithmen nutzen
         if (hoehe <= 15 && breite <= 25)
         {
@@ -131,7 +139,7 @@ public class RDG
         {
             ErzeugeNebenWegeGroß(karte, anzahlNebenwege, startX, startY, endX, endY, hoehe, breite);
         }
-
+        string EingabeF = "nein";
         // Optional Schätze und Fallen generieren
         Console.WriteLine("Wollen Sie, dass Schätze und Fallen mit 5% Wahrscheinlichkeit generiert werden?");
         while (true)
@@ -140,7 +148,29 @@ public class RDG
 
             if (Eingabe == "ja")
             {
-                ErzeugeSchaetzeUndFallen(karte, hoehe, breite);
+                ErzeugeSchaetzeUndFallen(karte, hoehe, breite, ref Zaehler);
+                Console.WriteLine("Wollen sie das die Fallen unsichtbar sind? (ja/nein)");
+                while (true)
+                {
+                    EingabeF = Console.ReadLine().ToLower();
+
+                    if (EingabeF == "ja")
+                    {
+                        Console.WriteLine("Die Fallen sind unsichtbar.");
+                        break; // Hauptschleife verlassen
+                    }
+
+                    else if (EingabeF == "nein")
+                    {
+                        Console.WriteLine("Die Fallen sind sichtbar.");
+                        break;
+                    }
+                    // Ungültige Eingabe → erneut fragen
+                    else
+                    {
+                        Console.WriteLine("Ungültige Eingabe! Bitte 'ja' oder 'nein' eingeben.");
+                    }
+                }
                 break;
             }
             else if (Eingabe == "nein")
@@ -182,6 +212,10 @@ public class RDG
 
         // Spielerstatus
         int leben = 3;
+        if (Zaehler > 0 && Zaehler <= 3)
+        {
+            leben = 1;
+        }
         int schatzAnzahl = 0;
 
         bool zielErreicht = false;
@@ -190,35 +224,54 @@ public class RDG
         while (!zielErreicht)
         {
             // Karte zeichnen
-            ZeichneKarte(karte, spielerX, spielerY, hoehe, breite);
+            ZeichneKarte(karte, spielerX, spielerY, hoehe, breite, EingabeF);
 
             // Cursor unter die Karte setzen (für Statusmeldungen)
-            Console.SetCursorPosition(0, hoehe + 1);
-
+            Console.SetCursorPosition(0, hoehe);
+            Console.Write(new string(' ', Console.WindowWidth));
+            Console.SetCursorPosition(0, hoehe);
+            Console.Write($"Leben: {leben}  Schätze: {schatzAnzahl}");
             // Spieler bewegen und prüfen, ob Ziel erreicht wurde
-            zielErreicht = SpielerBewegen(karte, ref spielerX, ref spielerY, endX, endY, ref leben, ref schatzAnzahl);
+            zielErreicht = SpielerBewegen(karte, ref spielerX, ref spielerY, endX, endY, ref leben, ref schatzAnzahl, breite, hoehe);
         }
 
         // Karte ein letztes Mal zeichnen
-        ZeichneKarte(karte, spielerX, spielerY, hoehe, breite);
+        ZeichneKarte(karte, spielerX, spielerY, hoehe, breite, EingabeF);
 
         // Spielende auswerten
         if (leben <= 0)
         {
+            Console.Clear();
+
+            // Titel: Game Over
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.WriteLine();
+            Console.WriteLine("   ██████   █████  ███    ███ ███████      ██████  ██    ██ ███████ ██████  ");
+            Console.WriteLine("  ██       ██   ██ ████  ████ ██          ██    ██ ██    ██ ██      ██   ██ ");
+            Console.WriteLine("  ██   ███ ███████ ██ ████ ██ █████       ██    ██ ██    ██ █████   ██████  ");
+            Console.WriteLine("  ██    ██ ██   ██ ██  ██  ██ ██          ██    ██  ██  ██  ██      ██   ██ ");
+            Console.WriteLine("   ██████  ██   ██ ██      ██ ███████      ██████    ████   ███████ ██   ██ ");
+            Console.WriteLine();
+
+            // Abstand
+            Console.WriteLine();
+
+            // Zusatzinfo
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine();
-            Console.WriteLine("Du hast kein Leben mehr! Spiel vorbei.");
             Console.WriteLine($"Du hast insgesamt {schatzAnzahl} Schätze gesammelt.");
-            Console.WriteLine();
+
+            // Reset
             Console.ResetColor();
+
             Thread.Sleep(2000);
+
         }
         else if (zielErreicht)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("Herzlichen Glückwunsch! Du hast das Ende erreicht!");
-            Console.WriteLine($"Du hast {schatzAnzahl} Schätze gesammelt.");
-            Console.WriteLine($"und noch {leben} Leben übrig.");
+            Console.WriteLine("Herzlichen Glückwunsch! Du hast das Ende erreicht!       ");
+            Console.WriteLine($"Du hast {schatzAnzahl} Schätze gesammelt.             ");
+            Console.WriteLine($"und noch {leben} Leben übrig.                        ");
             Console.WriteLine("                                                       ");
             Console.ResetColor();
             Thread.Sleep(2000);   // 2 Sekunden warten
@@ -462,7 +515,7 @@ public class RDG
 
 
     // Erzeugt zufällig Schätze und Fallen auf der Karte mit 5% Wahrscheinlichkeit pro Feld
-    static void ErzeugeSchaetzeUndFallen(char[,] karte, int hoehe, int breite)
+    static void ErzeugeSchaetzeUndFallen(char[,] karte, int hoehe, int breite, ref int Zaehler)
     {
         // Alle Felder der Karte durchlaufen
         for (int y = 0; y < hoehe; y++)
@@ -486,6 +539,7 @@ public class RDG
                         }
                         else
                         {
+                            Zaehler++;
                             karte[y, x] = Fallen;   // Falle platzieren
                         }
                     }
@@ -634,8 +688,8 @@ public class RDG
         Console.ResetColor();
         Console.WriteLine();
 
-        Console.WriteLine("Du befindest dich in einem zufällig erzeugten Dungeon voller Geheimnisse.");
-        Console.WriteLine("Dein Ziel ist einfach: Finde den Ausgang und überlebe dabei die Gefahren.");
+        Console.WriteLine("Willkommen im zufällig erzeugten Dungeon voller Geheimnisse und Gefahren.");
+        Console.WriteLine("Dein Ziel ist simpel: Finde den Ausgang – und überlebe lange genug, um ihn zu erreichen.");
         Console.WriteLine();
 
         Console.ForegroundColor = ConsoleColor.Green;
@@ -656,17 +710,17 @@ public class RDG
 
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.DarkRed;
-        Console.WriteLine("Du startest mit 3 Leben.");
-        Console.WriteLine("Verlierst du alle Leben, ist das Spiel vorbei.");
+        Console.WriteLine("Standardmäßig startest du mit 3 Leben.");
+        Console.WriteLine("ABER: Wenn im Dungeon weniger als 3 Fallen generiert wurden, startest du nur mit 1 Leben!");
         Console.ResetColor();
 
         Console.WriteLine();
-        Console.WriteLine("Du steuerst deinen Charakter mit:");
-        Console.WriteLine("W = hoch,  A = links,  S = runter,  D = rechts");
+        Console.WriteLine("Steuerung:");
+        Console.WriteLine("W = hoch   |   A = links   |   S = runter   |   D = rechts");
         Console.WriteLine();
 
         Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.WriteLine("Viel Glück... du wirst es brauchen.");
+        Console.WriteLine("Mach dich bereit... und viel Glück. Du wirst es brauchen.");
         Console.ResetColor();
 
         Console.WriteLine();
@@ -681,10 +735,10 @@ public class RDG
     }
 
 
+
     // Bewegt den Spieler basierend auf der Tastatureingabe.
     // Gibt true zurück, wenn das Ziel erreicht wurde oder der Spieler gestorben ist.
-    static bool SpielerBewegen(char[,] karte, ref int spielerX, ref int spielerY,
-                               int endX, int endY, ref int leben, ref int schatzAnzahl)
+    static bool SpielerBewegen(char[,] karte, ref int spielerX, ref int spielerY, int endX, int endY, ref int leben, ref int schatzAnzahl, int breite, int hoehe)
     {
         // Taste einlesen (WASD), ohne sie auf dem Bildschirm anzuzeigen
         ConsoleKeyInfo taste = Console.ReadKey(true);
@@ -720,24 +774,26 @@ public class RDG
         if (zielFeld == Schatz)
         {
             schatzAnzahl++;
-            Console.SetCursorPosition(0, karte.GetLength(0) + 3);
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"Du hast einen Schatz gefunden! Gesamt: {schatzAnzahl}");
-            Console.ResetColor();
         }
 
         // Falle ausgelöst
         if (zielFeld == Fallen)
         {
-            leben--;
-            Console.SetCursorPosition(0, karte.GetLength(0));
+
+            leben--; // Explosion auslösen 
+            Explosion(karte, neuX, neuY, breite, hoehe);
+            Console.SetCursorPosition(0, hoehe + 3);
+            Console.Write(new string(' ', Console.WindowWidth));
+            Console.SetCursorPosition(0, hoehe + 3);
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Du bist in eine Falle getappt! Leben übrig: {leben}");
+            Console.WriteLine($"BOOM! Eine Falle explodiert! Leben übrig: {leben}");
             Console.ResetColor();
 
             // Spieler tot → Spielende
             if (leben <= 0)
             {
+                spielerX = neuX;
+                spielerY = neuY;
                 return true;
             }
         }
@@ -756,52 +812,78 @@ public class RDG
         // Prüfen, ob das Ziel erreicht wurde
         return (spielerX == endX && spielerY == endY);
     }
+    static void Explosion(char[,] karte, int x, int y, int breite, int hoehe)
+    {
+        // Radius der Explosion 5x5
+        int radius = 2;
+
+        for (int dy = -radius; dy <= radius; dy++)
+        {
+            for (int dx = -radius; dx <= radius; dx++)
+            {
+                int nx = x + dx;
+                int ny = y + dy;
+
+                // Rand prüfen
+                if (nx <= 0 || nx >= breite - 1 || ny <= 0 || ny >= hoehe - 1)
+                    continue;
+
+                // Start/Ende nicht zerstören
+                if (karte[ny, nx] == START || karte[ny, nx] == ENDE)
+                    continue;
+
+                // Wand und Schatz in Gang verwandeln
+                if (karte[ny, nx] == WAND || karte[ny, nx] == Schatz)
+                    karte[ny, nx] = GANG;
+
+            }
+        }
+    }
+
 
     // Zeichnet die komplette Karte im Konsolenfenster.
-    // Der Spieler wird farbig hervorgehoben und überdeckt das Feld, auf dem er steht.
-    static void ZeichneKarte(char[,] karte, int spielerX, int spielerY, int hoehe, int breite)
+    static void ZeichneKarte(char[,] karte, int spielerX, int spielerY, int hoehe, int breite, String EingabeF)
     {
-        // Cursor immer oben links setzen, damit die Karte "aktualisiert" wird
         Console.SetCursorPosition(0, 0);
 
-        // Zeilenweise durch die Karte laufen
         for (int y = 0; y < hoehe; y++)
         {
             for (int x = 0; x < breite; x++)
             {
-                // Spielerposition prüfen
                 if (x == spielerX && y == spielerY)
                 {
-                    Console.ForegroundColor = ConsoleColor.Blue; // Spielerfarbe
-                    Console.Write('@'); // Spieler-Symbol
+                    Console.ForegroundColor = ConsoleColor.Blue;
+                    Console.Write('@');
+                    Console.ResetColor();
+                    continue;
                 }
-                else
+
+                char symbol = karte[y, x];
+
+                // Falle unsichtbar machen
+                if (EingabeF == "ja" && symbol == Fallen)
                 {
-                    // Normales Kartensymbol auslesen
-                    char symbol = karte[y, x];
-
-                    // Farbe je nach Symbol setzen
-                    if (symbol == 'S')                     // Start
-                        Console.ForegroundColor = ConsoleColor.Green;
-                    else if (symbol == 'E')                // Ende
-                        Console.ForegroundColor = ConsoleColor.Red;
-                    else if (symbol == 'T')                // Schatz
-                        Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    else if (symbol == 'F')                // Falle
-                        Console.ForegroundColor = ConsoleColor.Magenta;
-                    else
-                        Console.ResetColor();              // Normale Gänge/Wände
-
-                    // Symbol zeichnen
-                    Console.Write(symbol);
+                    symbol = GANG;
                 }
 
-                // Nach jedem Zeichen Farbe zurücksetzen
-                Console.ResetColor();
+                // Farben setzen
+                if (symbol == START)
+                    Console.ForegroundColor = ConsoleColor.Green;
+                else if (symbol == ENDE)
+                    Console.ForegroundColor = ConsoleColor.Red;
+                else if (symbol == Schatz)
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                else if (EingabeF == "nein" && symbol == Fallen)
+                    Console.ForegroundColor = ConsoleColor.Magenta;
+                else
+                    Console.ResetColor();
+
+                Console.Write(symbol);
             }
 
-            // Zeilenumbruch nach jeder Kartenzeile
+            Console.ResetColor();
             Console.WriteLine();
         }
     }
+
 }
