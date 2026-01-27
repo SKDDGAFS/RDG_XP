@@ -1,5 +1,6 @@
 // Github Rep Link
 //https://github.com/SKDDGAFS/RDG_XP 
+
 using System;
 using System.IO; // Für Dateizugriff damit wir die Karte speichern können als Textdatei
 using System.Text;
@@ -34,6 +35,7 @@ public class RDG
 
             Console.WriteLine("Willkommen zum Random Dungeon Generator!");
             menü();
+            schwierigkeitLVL();
             StarteSpiel(Zaehler);
         }
 
@@ -691,7 +693,7 @@ public class RDG
         Console.WriteLine("Willkommen im zufällig erzeugten Dungeon voller Geheimnisse und Gefahren.");
         Console.WriteLine("Dein Ziel ist simpel: Finde den Ausgang – und überlebe lange genug, um ihn zu erreichen.");
         Console.WriteLine();
-
+       
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("S  = Startpunkt");
         Console.ResetColor();
@@ -883,6 +885,55 @@ public class RDG
 
             Console.ResetColor();
             Console.WriteLine();
+        }
+    }
+
+    schwierigkeitLVL()
+    {
+        Console.WriteLine("Wählen Sie die schwierigkeit aus");
+        console.WriteLine("1. Leicht");
+        console.WriteLine("2. Mittel");
+        console.WriteLine("3. Schwer");
+        Console.write("4. Zurück");
+        while (true)
+        {
+            string eingabe = Console.readline().tolower();
+            switch (eingabe)
+            {
+                case "1":
+                    // Leicht
+                    // Mehr Leben, weniger Fallen
+                    leben = 5;
+                    fallenWahrscheinlichkeit = 3; // 3% Fallen
+                    Console.Clear();
+                    return;
+                case "2":
+                    // Mittel
+                    // Standardwerte
+                    leben = 3;
+                    fallenWahrscheinlichkeit = 5; // 5% Fallen
+                    Console.Clear();
+                    return;
+                case "3":
+                    // Schwer
+                    // Weniger Leben, mehr Fallen
+                    leben = 2;
+                    fallenWahrscheinlichkeit = 8; // 8% Fallen
+                    Console.Clear();
+                    return;
+                case "4":
+                    // Zurück zum Menü
+                    Console.Clear();
+                    menü();
+                    return;
+                default:
+                    // Ungültige Eingabe
+                    Console.Clear();
+                    Console.WriteLine("Ungültige Eingabe! Bitte erneut eingeben...");
+                    Thread.Sleep(1000); // 1 Sekunde warten
+                    break;
+
+            }
         }
     }
 
